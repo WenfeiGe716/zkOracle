@@ -4,7 +4,7 @@ go 1.23
 
 require (
 	github.com/consensys/gnark v0.7.1
-	github.com/consensys/gnark-crypto v0.12.1
+	github.com/consensys/gnark-crypto v0.7.0
 	github.com/ethereum/go-ethereum v1.14.12
 	github.com/rs/zerolog v1.26.1
 	github.com/spf13/viper v1.15.0
