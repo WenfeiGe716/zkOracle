@@ -10,7 +10,7 @@ const config: HardhatUserConfig = {
     runOnCompile: true,
     clear: true,
     flat: false,
-    only: ["ZKOracle"],
+    only: ["ZKAudit"],
     spacing: 2,
     pretty: false,
   },

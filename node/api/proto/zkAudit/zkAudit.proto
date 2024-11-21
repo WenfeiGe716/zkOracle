@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package zkAudit;
+option go_package = ".;zkAudit";
+
+message SendVoteRequest {
+  uint64 index = 1;
+  uint64 request = 2;
+  bytes blockHash = 3;
+  bytes signature = 4;
+  uint64 illegal = 5;
+}
+
+message SendVoteResponse {
+}
+
+service AuditNode {
+  rpc SendVote(SendVoteRequest) returns (SendVoteResponse);
+}

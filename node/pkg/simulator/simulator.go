@@ -25,7 +25,7 @@ import (
 	"github.com/status-im/keycard-go/hexutils"
 	"math/big"
 	"math/rand"
-	"node/pkg/zkOracle"
+	"node/pkg/zkAudit"
 	"os"
 	"runtime"
 	"strconv"
@@ -45,7 +45,7 @@ type simulator struct {
 	mode            SimulationMode
 	dst             string
 	ethClient       *ethclient.Client
-	contract        *zkOracle.ZKOracleContract
+	contract        *zkAudit.ZKOracleContract
 	privateKey      *ecdsa.PrivateKey
 	committeeSize   int
 	csvWriter       *csv.Writer
@@ -59,9 +59,9 @@ func NewSimulator(runs int, dst string, mode SimulationMode, ethClientURL string
 		return nil, fmt.Errorf("dial ethclient: %w", err)
 	}
 
-	contract, err := zkOracle.NewZKOracleContract(common.HexToAddress(contractAddress), ethClient)
+	contract, err := zkAudit.NewZKOracleContract(common.HexToAddress(contractAddress), ethClient)
 	if err != nil {
-		return nil, fmt.Errorf("new zkOracle contract: %w", err)
+		return nil, fmt.Errorf("new zkAudit contract: %w", err)
 	}
 
 	ecdsaPrivateKey, err := crypto.HexToECDSA(privateKey)
@@ -75,7 +75,7 @@ func NewSimulator(runs int, dst string, mode SimulationMode, ethClientURL string
 		mode:          mode,
 		ethClient:     ethClient,
 		contract:      contract,
-		committeeSize: (zkOracle.NumAccounts - 1) * 2,
+		committeeSize: (zkAudit.NumAccounts - 1) * 2,
 		privateKey:    ecdsaPrivateKey,
 	}, nil
 }
@@ -95,8 +95,8 @@ func (a *simulator) Simulate() error {
 }
 
 func (a *simulator) SimulateContracts() {
-	var aggregationCircuit zkOracle.AggregationCircuit
-	var slashingCircuit zkOracle.SlashingCircuit
+	var aggregationCircuit zkAudit.AggregationCircuit
+	var slashingCircuit zkAudit.SlashingCircuit
 
 	aggregationR1CS, err := frontend.Compile(ecc.BN254, r1cs.NewBuilder, &aggregationCircuit)
 	if err != nil {
@@ -203,7 +203,7 @@ func (a *simulator) SimulateContracts() {
 		panic(err)
 	}
 
-	state, err := zkOracle.NewState(mimc.NewMiMC(), accounts)
+	state, err := zkAudit.NewState(mimc.NewMiMC(), accounts)
 	if err != nil {
 		panic(err)
 	}
@@ -313,7 +313,7 @@ func (a *simulator) SimulateContracts() {
 }
 
 func (a *simulator) SimulateAggregation() {
-	var aggregationCircuit zkOracle.AggregationCircuit
+	var aggregationCircuit zkAudit.AggregationCircuit
 	var m1, m2 runtime.MemStats
 
 	runtime.GC()
@@ -385,7 +385,7 @@ func (a *simulator) SimulateAggregation() {
 			panic(err)
 		}
 
-		state, err := zkOracle.NewState(mimc.NewMiMC(), accounts)
+		state, err := zkAudit.NewState(mimc.NewMiMC(), accounts)
 		if err != nil {
 			panic(err)
 		}
@@ -442,7 +442,7 @@ func (a *simulator) SimulateAggregation() {
 }
 
 func (a *simulator) SimulateSlashing() {
-	var circuit zkOracle.SlashingCircuit
+	var circuit zkAudit.SlashingCircuit
 	var m1, m2 runtime.MemStats
 
 	runtime.GC()
@@ -514,7 +514,7 @@ func (a *simulator) SimulateSlashing() {
 			panic(err)
 		}
 
-		state, err := zkOracle.NewState(mimc.NewMiMC(), accounts)
+		state, err := zkAudit.NewState(mimc.NewMiMC(), accounts)
 		if err != nil {
 			panic(err)
 		}
@@ -570,7 +570,7 @@ func (a *simulator) SimulateSlashing() {
 	a.csvWriter.Flush()
 }
 
-func (a *simulator) RegisterAccounts(accounts []*zkOracle.Account) (uint64, error) {
+func (a *simulator) RegisterAccounts(accounts []*zkAudit.Account) (uint64, error) {
 	chainID, err := a.ethClient.ChainID(context.Background())
 	if err != nil {
 		panic(err)
@@ -624,7 +624,7 @@ func (a *simulator) RequestBlockByNumber() (uint64, error) {
 	return receipt.CumulativeGasUsed, nil
 }
 
-func (a *simulator) ReplaceAccount(i uint64, state *zkOracle.State) (uint64, error) {
+func (a *simulator) ReplaceAccount(i uint64, state *zkAudit.State) (uint64, error) {
 	chainID, err := a.ethClient.ChainID(context.Background())
 	if err != nil {
 		panic(err)
@@ -642,7 +642,7 @@ func (a *simulator) ReplaceAccount(i uint64, state *zkOracle.State) (uint64, err
 	if err != nil {
 		panic(err)
 	}
-	newAccount := &zkOracle.Account{
+	newAccount := &zkAudit.Account{
 		Index:     big.NewInt(int64(i)),
 		PublicKey: &sk.PublicKey,
 		Balance:   big.NewInt(200000000000),
@@ -676,7 +676,7 @@ func (a *simulator) ReplaceAccount(i uint64, state *zkOracle.State) (uint64, err
 	return receipt.CumulativeGasUsed, nil
 }
 
-func (a *simulator) ExitAccounts(accounts []*zkOracle.Account, state *zkOracle.State) (uint64, error) {
+func (a *simulator) ExitAccounts(accounts []*zkAudit.Account, state *zkAudit.State) (uint64, error) {
 	chainID, err := a.ethClient.ChainID(context.Background())
 	if err != nil {
 		panic(err)
@@ -715,7 +715,7 @@ func (a *simulator) ExitAccounts(accounts []*zkOracle.Account, state *zkOracle.S
 	return averageCost, nil
 }
 
-func (a *simulator) WithDrawAccounts(accounts []*zkOracle.Account, state *zkOracle.State) (uint64, error) {
+func (a *simulator) WithDrawAccounts(accounts []*zkAudit.Account, state *zkAudit.State) (uint64, error) {
 	chainID, err := a.ethClient.ChainID(context.Background())
 	if err != nil {
 		panic(err)
@@ -761,8 +761,8 @@ func (a *simulator) WithDrawAccounts(accounts []*zkOracle.Account, state *zkOrac
 	return averageCost, nil
 }
 
-func (a *simulator) SubmitBlock(p groth16.Proof, assignment *zkOracle.AggregationCircuit) (uint64, error) {
-	proof, err := zkOracle.ProofToEthereumProof(p)
+func (a *simulator) SubmitBlock(p groth16.Proof, assignment *zkAudit.AggregationCircuit) (uint64, error) {
+	proof, err := zkAudit.ProofToEthereumProof(p)
 	if err != nil {
 		panic(err)
 	}
@@ -810,7 +810,7 @@ func (a *simulator) SubmitBlock(p groth16.Proof, assignment *zkOracle.Aggregatio
 	return receipt.CumulativeGasUsed, nil
 }
 
-func (a *simulator) AssignVariables(state *zkOracle.State, privateKeys []*eddsa.PrivateKey) (*zkOracle.AggregationCircuit, error) {
+func (a *simulator) AssignVariables(state *zkAudit.State, privateKeys []*eddsa.PrivateKey) (*zkAudit.AggregationCircuit, error) {
 
 	preStateRoot, err := state.Root()
 	if err != nil {
@@ -822,7 +822,7 @@ func (a *simulator) AssignVariables(state *zkOracle.State, privateKeys []*eddsa.
 		return nil, fmt.Errorf("assign aggregator constraints: %w", err)
 	}
 
-	validatorConstraints, validatorBits, err := a.AssignValidatorConstraints(state, privateKeys[:zkOracle.NumAccounts])
+	validatorConstraints, validatorBits, err := a.AssignValidatorConstraints(state, privateKeys[:zkAudit.NumAccounts])
 	if err != nil {
 		return nil, fmt.Errorf("assign validator constraints: %w", err)
 	}
@@ -832,7 +832,7 @@ func (a *simulator) AssignVariables(state *zkOracle.State, privateKeys []*eddsa.
 		return nil, fmt.Errorf("pre state root: %w", err)
 	}
 
-	return &zkOracle.AggregationCircuit{
+	return &zkAudit.AggregationCircuit{
 		PreStateRoot:  preStateRoot,
 		PostStateRoot: postStateRoot,
 		BlockHash:     hexutils.HexToBytes("4e20b625e3020de61240b36ab7dba952e662c03214206559c03b004f08f3"),
@@ -843,8 +843,8 @@ func (a *simulator) AssignVariables(state *zkOracle.State, privateKeys []*eddsa.
 	}, nil
 }
 
-func (a *simulator) AssignAggregatorConstraints(state *zkOracle.State, privateKey *eddsa.PrivateKey) (*zkOracle.AggregatorConstraints, error) {
-	var assignment zkOracle.AggregationCircuit
+func (a *simulator) AssignAggregatorConstraints(state *zkAudit.State, privateKey *eddsa.PrivateKey) (*zkAudit.AggregatorConstraints, error) {
+	var assignment zkAudit.AggregationCircuit
 
 	merkleRoot, proof, helper, err := state.MerkleProof(a.aggregatorIndex.Uint64())
 	if err != nil {
@@ -877,29 +877,30 @@ func (a *simulator) AssignAggregatorConstraints(state *zkOracle.State, privateKe
 	preSeedX := new(big.Int)
 	preSeedY := new(big.Int)
 
-	preSeed.X.ToBigIntRegular(preSeedX)
-	preSeed.Y.ToBigIntRegular(preSeedY)
+	preSeed.X.BigInt(preSeedX)
+	preSeed.Y.BigInt(preSeedY)
 
 	var postSeed edwards.PointAffine
-	postSeed.ScalarMul(preSeed, sk)
+	postSeed.ScalarMultiplication(preSeed, sk)
+	//postSeed.ScalarMul(preSeed, sk)
 
 	postSeedX := new(big.Int)
 	postSeedY := new(big.Int)
 
-	postSeed.X.ToBigIntRegular(postSeedX)
-	postSeed.Y.ToBigIntRegular(postSeedY)
+	postSeed.X.BigInt(postSeedX)
+	postSeed.Y.BigInt(postSeedY)
 
 	account, err := state.ReadAccount(a.aggregatorIndex.Uint64())
 	if err != nil {
 		return nil, fmt.Errorf("read account: %w", err)
 	}
-	account.Balance.Add(account.Balance, big.NewInt(zkOracle.AggregatorReward))
+	account.Balance.Add(account.Balance, big.NewInt(zkAudit.AggregatorReward))
 	err = state.WriteAccount(account)
 	if err != nil {
 		return nil, fmt.Errorf("write account: %w", err)
 	}
 
-	return &zkOracle.AggregatorConstraints{
+	return &zkAudit.AggregatorConstraints{
 		Index:             a.aggregatorIndex,
 		PreSeed:           twistededwards.Point{X: preSeedX, Y: preSeedY},
 		PostSeed:          twistededwards.Point{X: postSeedX, Y: postSeedY},
@@ -910,8 +911,8 @@ func (a *simulator) AssignAggregatorConstraints(state *zkOracle.State, privateKe
 	}, nil
 }
 
-func (a *simulator) AssignValidatorConstraints(state *zkOracle.State, privateKeys []*eddsa.PrivateKey) ([zkOracle.NumAccounts]zkOracle.ValidatorConstraints, *big.Int, error) {
-	var validatorConstraints [zkOracle.NumAccounts]zkOracle.ValidatorConstraints
+func (a *simulator) AssignValidatorConstraints(state *zkAudit.State, privateKeys []*eddsa.PrivateKey) ([zkAudit.NumAccounts]zkAudit.ValidatorConstraints, *big.Int, error) {
+	var validatorConstraints [zkAudit.NumAccounts]zkAudit.ValidatorConstraints
 	validatorBits := big.NewInt(0)
 	for i, privateKey := range privateKeys {
 		var pub eddsa2.PublicKey
@@ -920,7 +921,7 @@ func (a *simulator) AssignValidatorConstraints(state *zkOracle.State, privateKey
 
 		pub.Assign(ecc.BN254, privateKey.PublicKey.Bytes())
 
-		vote := &zkOracle.Vote{
+		vote := &zkAudit.Vote{
 			Index:     uint64(i),
 			Request:   big.NewInt(0),
 			BlockHash: common.HexToHash("4e20b625e3020de61240b36ab7dba952e662c03214206559c03b004f08f3"),
@@ -951,7 +952,7 @@ func (a *simulator) AssignValidatorConstraints(state *zkOracle.State, privateKey
 
 		validatorBits = validatorBits.Add(validatorBits, validatorBit)
 
-		validatorConstraints[i] = zkOracle.ValidatorConstraints{
+		validatorConstraints[i] = zkAudit.ValidatorConstraints{
 			Index:             account.Index,
 			PublicKey:         pub,
 			Balance:           new(big.Int).Set(account.Balance), //passed by reference
@@ -961,7 +962,7 @@ func (a *simulator) AssignValidatorConstraints(state *zkOracle.State, privateKey
 			BlockHash:         result,
 		}
 
-		account.Balance.Add(account.Balance, big.NewInt(zkOracle.ValidatorReward))
+		account.Balance.Add(account.Balance, big.NewInt(zkAudit.ValidatorReward))
 		err = state.WriteAccount(account)
 		if err != nil {
 			return validatorConstraints, validatorBits, fmt.Errorf("write account: %w", err)
@@ -971,8 +972,8 @@ func (a *simulator) AssignValidatorConstraints(state *zkOracle.State, privateKey
 	return validatorConstraints, validatorBits, nil
 }
 
-func (a *simulator) Slash(p groth16.Proof, assignment *zkOracle.SlashingCircuit) (uint64, error) {
-	proof, err := zkOracle.ProofToEthereumProof(p)
+func (a *simulator) Slash(p groth16.Proof, assignment *zkAudit.SlashingCircuit) (uint64, error) {
+	proof, err := zkAudit.ProofToEthereumProof(p)
 	if err != nil {
 		panic(err)
 	}
@@ -1014,7 +1015,7 @@ func (a *simulator) Slash(p groth16.Proof, assignment *zkOracle.SlashingCircuit)
 	return receipt.CumulativeGasUsed, nil
 }
 
-func (a *simulator) AssignVariablesSlashing(state *zkOracle.State, privateKeys []*eddsa.PrivateKey) (*zkOracle.SlashingCircuit, error) {
+func (a *simulator) AssignVariablesSlashing(state *zkAudit.State, privateKeys []*eddsa.PrivateKey) (*zkAudit.SlashingCircuit, error) {
 
 	preStateRoot, err := state.Root()
 	if err != nil {
@@ -1036,7 +1037,7 @@ func (a *simulator) AssignVariablesSlashing(state *zkOracle.State, privateKeys [
 		return nil, fmt.Errorf("pre state root: %w", err)
 	}
 
-	return &zkOracle.SlashingCircuit{
+	return &zkAudit.SlashingCircuit{
 		PreStateRoot:  preStateRoot,
 		PostStateRoot: postStateRoot,
 		BlockHash:     hexutils.HexToBytes("4e20b625e3020de61240b36ab7dba952e662c03214206559c03b004f08f3"),
@@ -1046,8 +1047,8 @@ func (a *simulator) AssignVariablesSlashing(state *zkOracle.State, privateKeys [
 	}, nil
 }
 
-func (a *simulator) AssignSlasherConstraints(state *zkOracle.State, privateKey *eddsa.PrivateKey, reward *big.Int) (zkOracle.SlasherConstraints, error) {
-	var slasherConstraints zkOracle.SlasherConstraints
+func (a *simulator) AssignSlasherConstraints(state *zkAudit.State, privateKey *eddsa.PrivateKey, reward *big.Int) (zkAudit.SlasherConstraints, error) {
+	var slasherConstraints zkAudit.SlasherConstraints
 
 	var pub eddsa2.PublicKey
 	pub.Assign(ecc.BN254, privateKey.PublicKey.Bytes())
@@ -1069,7 +1070,7 @@ func (a *simulator) AssignSlasherConstraints(state *zkOracle.State, privateKey *
 		return slasherConstraints, fmt.Errorf("write account: %w", err)
 	}
 
-	return zkOracle.SlasherConstraints{
+	return zkAudit.SlasherConstraints{
 		Index:             1,
 		PublicKey:         pub,
 		Balance:           oldBalance,
@@ -1078,8 +1079,8 @@ func (a *simulator) AssignSlasherConstraints(state *zkOracle.State, privateKey *
 	}, nil
 }
 
-func (a *simulator) AssignSlashedValidatorConstraints(state *zkOracle.State, privateKey *eddsa.PrivateKey) (zkOracle.SlashedValidatorConstraints, *big.Int, error) {
-	var validatorConstraints zkOracle.SlashedValidatorConstraints
+func (a *simulator) AssignSlashedValidatorConstraints(state *zkAudit.State, privateKey *eddsa.PrivateKey) (zkAudit.SlashedValidatorConstraints, *big.Int, error) {
+	var validatorConstraints zkAudit.SlashedValidatorConstraints
 
 	var pub eddsa2.PublicKey
 	var sig eddsa2.Signature
@@ -1087,7 +1088,7 @@ func (a *simulator) AssignSlashedValidatorConstraints(state *zkOracle.State, pri
 
 	pub.Assign(ecc.BN254, privateKey.PublicKey.Bytes())
 
-	vote := &zkOracle.Vote{
+	vote := &zkAudit.Vote{
 		Index:     uint64(0),
 		Request:   big.NewInt(0),
 		BlockHash: common.HexToHash("3e20b625e3020de61240b36ab7dba952e662c03214206559c03b004f08f3"),
@@ -1114,7 +1115,7 @@ func (a *simulator) AssignSlashedValidatorConstraints(state *zkOracle.State, pri
 	}
 
 	balance := new(big.Int).Set(account.Balance)
-	validatorConstraints = zkOracle.SlashedValidatorConstraints{
+	validatorConstraints = zkAudit.SlashedValidatorConstraints{
 		Index:             account.Index,
 		PublicKey:         pub,
 		Balance:           balance, //passed by reference

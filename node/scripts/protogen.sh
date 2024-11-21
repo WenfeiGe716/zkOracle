@@ -7,4 +7,4 @@ if ! which protoc >/dev/null; then
   exit 1
 fi
 
-protoc -I ../api/proto/zkOracle --go_out=../pkg/zkOracle --go-grpc_out=../pkg/zkOracle ../api/proto/zkOracle/zkOracle.proto
+protoc -I ../api/proto/zkAudit --go_out=../pkg/zkAudit --go-grpc_out=../pkg/zkAudit ../api/proto/zkAudit/zkAudit.proto

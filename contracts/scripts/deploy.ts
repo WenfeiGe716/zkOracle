@@ -14,8 +14,8 @@ async function main() {
 
   const slashingVerifier = await SlashingVerifier.deploy();
 
-  const ZKOracle = await ethers.getContractFactory(
-    "contracts/ZKOracle.sol:ZKOracle",
+  const ZKAudit = await ethers.getContractFactory(
+    "contracts/ZKAudit.sol:ZKAudit",
     {
       libraries: {
         MiMC: miMC.address,
@@ -23,17 +23,18 @@ async function main() {
     }
   );
 
-  const zkOracle = await ZKOracle.deploy(
-    3,
+  const zkAudit = await ZKAudit.deploy(
+    10,
     "5491184307399689246197683245202605692069525215510636283504164930708453453685",
     "2576048849028791939551994783150968389338965397796293068226051430557680319904",
+    1000000000000000000000000000000000000000000000000000000000000000000000000,
     aggregationVerifier.address,
     slashingVerifier.address
   );
 
-  await zkOracle.deployed();
+  await zkAudit.deployed();
 
-  console.log(`zkOracle deployed to ${zkOracle.address}`);
+  console.log(`zkAudit deployed to ${zkAudit.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

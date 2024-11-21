@@ -7,4 +7,4 @@ if ! which abigen >/dev/null; then
   exit 1
 fi
 
-abigen --abi ../../contracts/artifacts/abi/contracts/ZKOracle.sol/ZKOracle.json --pkg zkOracle --type ZKOracleContract --out ../pkg/zkOracle/contract.go
+abigen --abi ../../contracts/artifacts/abi/contracts/ZKAudit.sol/ZKOracle.json --pkg zkAudit --type ZKAuditContract --out ../pkg/zkAudit/contract.go

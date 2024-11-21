@@ -7,7 +7,7 @@ import (
 	"github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/frontend/cs/r1cs"
-	"node/pkg/zkOracle"
+	"node/pkg/zkAudit"
 	"os"
 	"path"
 )
@@ -17,12 +17,12 @@ func main() {
 	b := flag.String("b", "./build/", "filename of the config file")
 	flag.Parse()
 
-	err := compile(new(zkOracle.AggregationCircuit), path.Join(*b, "aggregation"))
+	err := compile(new(zkAudit.AggregationCircuit), path.Join(*b, "aggregation"))
 	if err != nil {
 		panic(err)
 	}
 
-	err = compile(new(zkOracle.SlashingCircuit), path.Join(*b, "slashing"))
+	err = compile(new(zkAudit.SlashingCircuit), path.Join(*b, "slashing"))
 	if err != nil {
 		panic(err)
 	}
